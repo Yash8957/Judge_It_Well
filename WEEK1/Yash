@@ -1,0 +1,828 @@
+Part 1: Text Preprocessing
+Data- given in the below code cell
+
+1.1: Preprocessing From Scratch
+
+Goal: Write a function clean_text_scratch(text) that performs the following without using NLTK or Spacy:
+
+Lowercasing: Convert text to lowercase.
+
+Punctuation Removal: Use Python's re (regex) library or string methods to remove special characters (!, ., ,, :, ;, ..., ').
+
+Tokenization: Split the string into a list of words based on whitespace.
+
+Stopword Removal: Filter out words found in this list: ['the', 'is', 'in', 'to', 'of', 'and', 'a', 'it', 'was', 'but', 'or'].
+
+Simple Stemming: Create a helper function that removes suffixes 'ing', 'ly', 'ed', and 's' from the end of words.
+
+Note: This is a "Naive" stemmer. It will break words like "sing" -> "s". This illustrates why we need libraries!
+
+Task: Run this function on the first sentence of the corpus and print the result.
+
+
+[ ]
+
+Start coding or generate with AI.
+
+[ ]
+corpus = [
+    "Artificial Intelligence is transforming the world; however, ethical concerns remain!",
+    "The pizza was absolutely delicious, but the service was terrible ... I won't go back.",
+    "The quick brown fox jumps over the lazy dog.",
+    "To be, or not to be, that is the question: Whether 'tis nobler in the mind.",
+    "Data science involves statistics, linear algebra, and machine learning.",
+    "I love machine learning, but I hate the math behind it."
+]
+
+[ ]
+
+Start coding or generate with AI.
+
+[ ]
+#import re
+#write rest of the code here
+
+import re
+
+corpus = [
+    "Artificial Intelligence is transforming the world; however, ethical concerns remain!",
+    "The pizza was absolutely delicious, but the service was terrible ... I won't go back.",
+    "The quick brown fox jumps over the lazy dog.",
+    "To be, or not to be, that is the question: Whether 'tis nobler in the mind.",
+    "Data science involves statistics, linear algebra, and machine learning.",
+    "I love machine learning, but I hate the math behind it."
+]
+
+stopwords = {'the', 'is', 'in', 'to', 'of', 'and', 'a', 'it', 'was', 'but', 'or'}
+
+# Naive stemmer: remove one of the specified suffixes if present at the end
+suffixes = ['ing', 'ly', 'ed', 's']
+
+def naive_stem(word: str) -> str:
+    for suf in suffixes:
+        if word.endswith(suf) and len(word) > len(suf):
+            return word[:-len(suf)]
+    return word
+
+def clean_text_scratch(text: str):
+    # 1) Lowercase
+    text = text.lower()
+    # 2) Remove punctuation/special chars (keep letters/digits/space)
+    text = re.sub(r"[^a-z0-9\s]", " ", text)
+    text = re.sub(r"\s+", " ", text).strip()
+    # 3) Tokenize
+    tokens = text.split()
+    # 4) Stopword removal
+    tokens = [t for t in tokens if t not in stopwords]
+    # 5) Naive stemming
+    stemmed = [naive_stem(t) for t in tokens]
+    return stemmed
+
+# Run on the first sentence of the corpus and print the result
+first_cleaned = clean_text_scratch(corpus[0])
+print(first_cleaned)
+
+['artificial', 'intelligence', 'transform', 'world', 'however', 'ethical', 'concern', 'remain']
+1.2: Preprocessing Using Tools
+
+Goal: Use the nltk library to perform the same cleaning on the entire corpus.
+
+Steps:
+
+Use nltk.tokenize.word_tokenize.
+Use nltk.corpus.stopwords.
+Use nltk.stem.WordNetLemmatizer
+to convert words to their root (e.g., "jumps"  →  "jump", "transforming"  →  "transform").
+
+Task: Print the cleaned, lemmatized tokens for the second sentence (The pizza review).
+
+
+[ ]
+import nltk
+nltk.download('punkt')
+nltk.download('stopwords')
+nltk.download('wordnet')
+nltk.download('omw-1.4')
+nltk.download('punkt_tab')
+
+from nltk.tokenize import word_tokenize
+from nltk.corpus import stopwords
+from nltk.stem import WordNetLemmatizer
+
+# Define a function to clean text using NLTK tools
+def clean_text_nltk(text):
+    # Lowercasing and tokenization
+    tokens = word_tokenize(text.lower())
+
+    # Stopword removal
+    stop_words = set(stopwords.words('english'))
+    filtered_tokens = [word for word in tokens if word.isalpha() and word not in stop_words]
+
+    # Lemmatization
+    lemmatizer = WordNetLemmatizer()
+    lemmas = [lemmatizer.lemmatize(word) for word in filtered_tokens]
+    return lemmas
+
+# Apply the function to the second sentence of the corpus
+# Ensure corpus is defined. Assuming it's in a previous cell.
+# corpus = [
+#     "Artificial Intelligence is transforming the world; however, ethical concerns remain!",
+#     "The pizza was absolutely delicious, but the service was terrible ... I won't go back.",
+#     "The quick brown fox jumps over the lazy dog.",
+#     "To be, or not to be, that is the question: Whether 'tis nobler in the mind.",
+#     "Data science involves statistics, linear algebra, and machine learning.",
+#     "I love machine learning, but I hate the math behind it."
+# ]
+
+# Get the second sentence (index 1)
+second_sentence = corpus[1]
+
+# Clean and print the result
+cleaned_second_sentence = clean_text_nltk(second_sentence)
+print(cleaned_second_sentence)
+['pizza', 'absolutely', 'delicious', 'service', 'terrible', 'wo', 'go', 'back']
+[nltk_data] Downloading package punkt to /root/nltk_data...
+[nltk_data]   Package punkt is already up-to-date!
+[nltk_data] Downloading package stopwords to /root/nltk_data...
+[nltk_data]   Package stopwords is already up-to-date!
+[nltk_data] Downloading package wordnet to /root/nltk_data...
+[nltk_data]   Package wordnet is already up-to-date!
+[nltk_data] Downloading package omw-1.4 to /root/nltk_data...
+[nltk_data]   Package omw-1.4 is already up-to-date!
+[nltk_data] Downloading package punkt_tab to /root/nltk_data...
+[nltk_data]   Package punkt_tab is already up-to-date!
+Part 2: Text Representation
+2.1: Bag of Words (BoW)
+
+Logic:
+
+Build Vocabulary: Create a list of all unique words in the entire corpus (after cleaning). Sort them alphabetically.
+
+Vectorize: Write a function that takes a sentence and returns a list of numbers. Each number represents the count of a vocabulary word in that sentence.
+
+Task: Print the unique Vocabulary list. Then, print the BoW vector for: "The quick brown fox jumps over the lazy dog."
+
+
+[ ]
+
+Start coding or generate with AI.
+
+[ ]
+import nltk
+from nltk.tokenize import word_tokenize
+from nltk.corpus import stopwords
+from nltk.stem import WordNetLemmatizer
+
+# NLTK downloads (run once)
+nltk.download('punkt')
+nltk.download('stopwords')
+nltk.download('wordnet')
+
+# rest of the code here
+[nltk_data] Downloading package punkt to /root/nltk_data...
+[nltk_data]   Package punkt is already up-to-date!
+[nltk_data] Downloading package stopwords to /root/nltk_data...
+[nltk_data]   Package stopwords is already up-to-date!
+[nltk_data] Downloading package wordnet to /root/nltk_data...
+[nltk_data]   Package wordnet is already up-to-date!
+True
+
+[ ]
+
+import re
+
+corpus = [
+    "Artificial Intelligence is transforming the world; however, ethical concerns remain!",
+    "The pizza was absolutely delicious, but the service was terrible ... I won't go back.",
+    "The quick brown fox jumps over the lazy dog.",
+    "To be, or not to be, that is the question: Whether 'tis nobler in the mind.",
+    "Data science involves statistics, linear algebra, and machine learning.",
+    "I love machine learning, but I hate the math behind it."
+]
+
+stopwords = {'the','is','in','to','of','and','a','it','was','but','or'}
+suffixes = ['ing','ly','ed','s']
+
+def naive_stem(word: str) -> str:
+    for suf in suffixes:
+        if word.endswith(suf) and len(word) > len(suf):
+            return word[:-len(suf)]
+    return word
+
+def clean_text_scratch(text: str):
+    text = text.lower()
+    text = re.sub(r"[^a-z0-9\s]", " ", text)
+    text = re.sub(r"\s+", " ", text).strip()
+    tokens = text.split()
+    tokens = [t for t in tokens if t not in stopwords]
+    stemmed = [naive_stem(t) for t in tokens]
+    return stemmed
+
+# 1) Clean corpus
+cleaned_corpus = [clean_text_scratch(s) for s in corpus]
+
+# 2) Build vocabulary (sorted unique tokens)
+vocab = sorted({tok for doc in cleaned_corpus for tok in doc})
+
+# 3) BoW vectorizer
+from collections import Counter
+
+def bow_vectorize(sentence: str, vocab_list):
+    tokens = clean_text_scratch(sentence)
+    counts = Counter(tokens)
+    return [counts[word] for word in vocab_list]
+
+# Target sentence
+target = "The quick brown fox jumps over the lazy dog."
+bow_vec = bow_vectorize(target, vocab)
+
+2.2: BoW Using Tools
+
+Task: Use sklearn.feature_extraction.text.CountVectorizer.
+
+Steps:
+
+Instantiate the vectorizer.
+
+fit_transform the raw corpus.
+
+Convert the result to an array (.toarray()) and print it.
+
+
+[ ]
+#from sklearn.feature_extraction.text import CountVectorizer
+#rest of the code here
+
+from sklearn.feature_extraction.text import CountVectorizer
+
+# Raw corpus
+corpus = [
+    "Artificial Intelligence is transforming the world; however, ethical concerns remain!",
+    "The pizza was absolutely delicious, but the service was terrible ... I won't go back.",
+    "The quick brown fox jumps over the lazy dog.",
+    "To be, or not to be, that is the question: Whether 'tis nobler in the mind.",
+    "Data science involves statistics, linear algebra, and machine learning.",
+    "I love machine learning, but I hate the math behind it."
+]
+
+# 1. Instantiate the vectorizer
+vectorizer = CountVectorizer()
+
+# 2. Fit and transform the corpus
+X = vectorizer.fit_transform(corpus)
+
+# 3. Convert to array
+bow_array = X.toarray()
+
+# 4. Print vocabulary and BoW matrix
+print("Feature Names (Vocabulary):")
+print(vectorizer.get_feature_names_out())
+
+print("\nBag of Words Matrix:")
+print(bow_array)
+
+Feature Names (Vocabulary):
+['absolutely' 'algebra' 'and' 'artificial' 'back' 'be' 'behind' 'brown'
+ 'but' 'concerns' 'data' 'delicious' 'dog' 'ethical' 'fox' 'go' 'hate'
+ 'however' 'in' 'intelligence' 'involves' 'is' 'it' 'jumps' 'lazy'
+ 'learning' 'linear' 'love' 'machine' 'math' 'mind' 'nobler' 'not' 'or'
+ 'over' 'pizza' 'question' 'quick' 'remain' 'science' 'service'
+ 'statistics' 'terrible' 'that' 'the' 'tis' 'to' 'transforming' 'was'
+ 'whether' 'won' 'world']
+
+Bag of Words Matrix:
+[[0 0 0 1 0 0 0 0 0 1 0 0 0 1 0 0 0 1 0 1 0 1 0 0 0 0 0 0 0 0 0 0 0 0 0 0
+  0 0 1 0 0 0 0 0 1 0 0 1 0 0 0 1]
+ [1 0 0 0 1 0 0 0 1 0 0 1 0 0 0 1 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 1
+  0 0 0 0 1 0 1 0 2 0 0 0 2 0 1 0]
+ [0 0 0 0 0 0 0 1 0 0 0 0 1 0 1 0 0 0 0 0 0 0 0 1 1 0 0 0 0 0 0 0 0 0 1 0
+  0 1 0 0 0 0 0 0 2 0 0 0 0 0 0 0]
+ [0 0 0 0 0 2 0 0 0 0 0 0 0 0 0 0 0 0 1 0 0 1 0 0 0 0 0 0 0 0 1 1 1 1 0 0
+  1 0 0 0 0 0 0 1 2 1 2 0 0 1 0 0]
+ [0 1 1 0 0 0 0 0 0 0 1 0 0 0 0 0 0 0 0 0 1 0 0 0 0 1 1 0 1 0 0 0 0 0 0 0
+  0 0 0 1 0 1 0 0 0 0 0 0 0 0 0 0]
+ [0 0 0 0 0 0 1 0 1 0 0 0 0 0 0 0 1 0 0 0 0 0 1 0 0 1 0 1 1 1 0 0 0 0 0 0
+  0 0 0 0 0 0 0 0 1 0 0 0 0 0 0 0]]
+2.3: TF-IDF From Scratch (The Math)
+
+Goal: Manually calculate the score for the word "machine" in the last sentence:
+
+"I love machine learning, but I hate the math behind it."
+
+Formula:
+
+TF (Term Frequency):  Count of 'machine' in sentenceTotal words in sentence 
+
+IDF (Inverse Document Frequency):  log(Total number of documentsNumber of documents containing 'machine')  (Use math.log).
+
+Result: TF * IDF.
+
+Task: Print your manual calculation result.
+
+
+[ ]
+# write code here
+
+import re
+import math
+
+# Corpus
+corpus = [
+    "Artificial Intelligence is transforming the world; however, ethical concerns remain!",
+    "The pizza was absolutely delicious, but the service was terrible ... I won't go back.",
+    "The quick brown fox jumps over the lazy dog.",
+    "To be, or not to be, that is the question: Whether 'tis nobler in the mind.",
+    "Data science involves statistics, linear algebra, and machine learning.",
+    "I love machine learning, but I hate the math behind it."
+]
+
+# Basic cleaner: lowercase + remove punctuation, then tokenize by whitespace
+def tokenize(text: str):
+    text = text.lower()
+    text = re.sub(r"[^a-z0-9\s]", " ", text)
+    text = re.sub(r"\s+", " ", text).strip()
+    return text.split()
+
+# Target setup
+target_word = "machine"
+last_sentence = corpus[-1]
+
+# ---- TF (Term Frequency) ----
+tokens_last = tokenize(last_sentence)
+count_target = sum(1 for t in tokens_last if t == target_word)
+total_words = len(tokens_last)
+TF = count_target / total_words if total_words > 0 else 0.0
+
+# ---- IDF (Inverse Document Frequency) ----
+N = len(corpus)
+docs_with_word = sum(1 for doc in corpus if target_word in tokenize(doc))
+IDF = math.log(N / docs_with_word) if docs_with_word > 0 else 0.0
+
+# ---- TF-IDF ----
+TF_IDF = TF * IDF
+
+# Print manual calculation
+print("Tokens in last sentence:", tokens_last)
+print(f"TF('{target_word}') = {count_target} / {total_words} = {TF}")
+print(f"IDF('{target_word}') = log({N} / {docs_with_word}) = {IDF}")
+print(f"TF-IDF('{target_word}') = {TF} * {IDF} = {TF_IDF}")
+
+Tokens in last sentence: ['i', 'love', 'machine', 'learning', 'but', 'i', 'hate', 'the', 'math', 'behind', 'it']
+TF('machine') = 1 / 11 = 0.09090909090909091
+IDF('machine') = log(6 / 2) = 1.0986122886681098
+TF-IDF('machine') = 0.09090909090909091 * 1.0986122886681098 = 0.09987384442437362
+2.4: TF-IDF Using Tools
+
+Task: Use sklearn.feature_extraction.text.TfidfVectorizer.
+
+Steps: Fit it on the corpus and print the vector for the first sentence.
+
+Observation: Compare the score of unique words (like "Intelligence") vs common words (like "is"). Which is higher?
+
+
+[ ]
+#from sklearn.feature_extraction.text import TfidfVectorizer
+# rest of the code here
+
+from sklearn.feature_extraction.text import TfidfVectorizer
+import numpy as np
+
+corpus = [
+    "Artificial Intelligence is transforming the world; however, ethical concerns remain!",
+    "The pizza was absolutely delicious, but the service was terrible ... I won't go back.",
+    "The quick brown fox jumps over the lazy dog.",
+    "To be, or not to be, that is the question: Whether 'tis nobler in the mind.",
+    "Data science involves statistics, linear algebra, and machine learning.",
+    "I love machine learning, but I hate the math behind it."
+]
+
+# 1) Instantiate the TF-IDF vectorizer and fit on the corpus
+vectorizer = TfidfVectorizer()
+X = vectorizer.fit_transform(corpus)
+
+# 2) Extract the vector for the first sentence
+first_vec = X[0].toarray().flatten()
+feature_names = vectorizer.get_feature_names_out()
+
+# 3) Print the non-zero terms and their TF-IDF scores for readability
+nonzero_indices = np.where(first_vec > 0)[0]
+terms_scores = sorted(
+    [(feature_names[i], first_vec[i]) for i in nonzero_indices],
+    key=lambda x: x[1],
+    reverse=True
+)
+
+print("TF-IDF vector (non-zero terms) for the first sentence:")
+for term, score in terms_scores:
+    print(f"{term}: {score:.4f}")
+
+# Optional: direct comparison for 'intelligence' vs 'is'
+def score_of(term):
+    try:
+        idx = list(feature_names).index(term)
+        return first_vec[idx]
+    except ValueError:
+        return None
+
+print("\nScores in the first sentence:")
+print("intelligence:", score_of("intelligence"))
+print("is:", score_of("is"))
+
+TF-IDF vector (non-zero terms) for the first sentence:
+artificial: 0.3345
+concerns: 0.3345
+ethical: 0.3345
+however: 0.3345
+intelligence: 0.3345
+remain: 0.3345
+transforming: 0.3345
+world: 0.3345
+is: 0.2743
+the: 0.1714
+
+Scores in the first sentence:
+intelligence: 0.3345454287016015
+is: 0.27433203727401334
+Part 3- Word Embeddings
+3.1: Word2Vec Using Tools
+
+Task: Train a model using gensim.models.Word2Vec.
+
+Steps:
+
+Pass your cleaned tokenized corpus (from Part 1.2) to Word2Vec.
+
+Set min_count=1 (since our corpus is small, we want to keep all words).
+
+Set vector_size=10 (small vector size for easy viewing).
+
+Experiment: Print the vector for the word "learning".
+
+
+[ ]
+!pip install gensim
+from gensim.models import Word2Vec
+import nltk
+from nltk.tokenize import word_tokenize
+from nltk.corpus import stopwords
+from nltk.stem import WordNetLemmatizer
+
+#rest of the code here
+
+# If needed:
+# !pip install gensim
+
+from gensim.models import Word2Vec
+import re
+
+# ---------- Part 1.2: Cleaner (reused) ----------
+corpus = [
+    "Artificial Intelligence is transforming the world; however, ethical concerns remain!",
+    "The pizza was absolutely delicious, but the service was terrible ... I won't go back.",
+    "The quick brown fox jumps over the lazy dog.",
+    "To be, or not to be, that is the question: Whether 'tis nobler in the mind.",
+    "Data science involves statistics, linear algebra, and machine learning.",
+    "I love machine learning, but I hate the math behind it."
+]
+
+stopwords = {'the','is','in','to','of','and','a','it','was','but','or'}
+suffixes = ['ing','ly','ed','s']  # naive stemmer suffixes
+
+def naive_stem(word: str) -> str:
+    for suf in suffixes:
+        if word.endswith(suf) and len(word) > len(suf):
+            return word[:-len(suf)]
+    return word
+
+def clean_text_scratch(text: str):
+    # 1) Lowercase
+    text = text.lower()
+    # 2) Remove punctuation / special characters
+    text = re.sub(r"[^a-z0-9\s]", " ", text)
+    text = re.sub(r"\s+", " ", text).strip()
+    # 3) Tokenize
+    tokens = text.split()
+    # 4) Stopword removal
+    tokens = [t for t in tokens if t not in stopwords]
+    # 5) Naive stemming
+    tokens = [naive_stem(t) for t in tokens]
+    return tokens
+
+# Cleaned, tokenized corpus (list of lists of tokens)
+cleaned_corpus_tokens = [clean_text_scratch(doc) for doc in corpus]
+
+# ---------- Train Word2Vec ----------
+SEED = 42  # for reproducibility
+model = Word2Vec(
+    sentences=cleaned_corpus_tokens,
+    vector_size=10,   # small vector size for easy viewing
+    window=5,
+    min_count=1,      # keep all words
+    sg=0,             # CBOW (use sg=1 for Skip-gram)
+    workers=1,
+    epochs=50,
+    seed=SEED
+)
+
+# ---------- Experiment: print vector for "learning" ----------
+target = "learning"
+fallback = "learn"  # due to naive stemmer
+
+if target in model.wv:
+    vec = model.wv[target]
+    print(f"Vector for '{target}' (length {len(vec)}):\n{vec}")
+elif fallback in model.wv:
+    vec = model.wv[fallback]
+    print(f"'learning' not found due to stemming; showing vector for '{fallback}' (length {len(vec)}):\n{vec}")
+else:
+    print("Neither 'learning' nor 'learn' found in the model vocabulary. Try retraining without stemming.")
+
+Collecting gensim
+  Downloading gensim-4.4.0-cp312-cp312-manylinux_2_24_x86_64.manylinux_2_28_x86_64.whl.metadata (8.4 kB)
+Requirement already satisfied: numpy>=1.18.5 in /usr/local/lib/python3.12/dist-packages (from gensim) (2.0.2)
+Requirement already satisfied: scipy>=1.7.0 in /usr/local/lib/python3.12/dist-packages (from gensim) (1.16.3)
+Requirement already satisfied: smart_open>=1.8.1 in /usr/local/lib/python3.12/dist-packages (from gensim) (7.5.0)
+Requirement already satisfied: wrapt in /usr/local/lib/python3.12/dist-packages (from smart_open>=1.8.1->gensim) (2.0.1)
+Downloading gensim-4.4.0-cp312-cp312-manylinux_2_24_x86_64.manylinux_2_28_x86_64.whl (27.9 MB)
+   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 27.9/27.9 MB 69.4 MB/s eta 0:00:00
+Installing collected packages: gensim
+Successfully installed gensim-4.4.0
+'learning' not found due to stemming; showing vector for 'learn' (length 10):
+[ 0.00579272  0.09525505  0.04697919  0.05290301  0.04492708  0.05687171
+  0.0019812  -0.07445481  0.0668371  -0.01057429]
+3.3: Pre-trained GloVe (Understanding Global Context)
+
+Task: Use gensim.downloader to load 'glove-wiki-gigaword-50'
+
+Analogy Task: Compute the famous analogy: King−Man+Woman=? 
+
+Use model.most_similar(positive=['woman', 'king'], negative=['man']).
+
+Question: Does the model correctly guess "Queen"?
+
+
+[ ]
+#import gensim.downloader as api
+
+# Load pre-trained GloVe model
+#glove_model = api.load('glove-wiki-gigaword-50')
+
+#rest of the code here
+
+# If needed:
+# !pip install gensim
+
+import gensim.downloader as api
+
+# 1) Load pre-trained GloVe model (50-dimensional)
+model = api.load("glove-wiki-gigaword-50")
+
+# 2) Analogy: King - Man + Woman = ?
+result = model.most_similar(positive=['woman', 'king'], negative=['man'])
+
+# 3) Print top results
+print("Analogy: King - Man + Woman = ?")
+for word, score in result:
+    print(f"{word}: {score:.4f}")
+
+# Check if 'queen' is the top guess
+print("\nTop guess:", result[0][0])
+
+[==================================================] 100.0% 66.0/66.0MB downloaded
+Analogy: King - Man + Woman = ?
+queen: 0.8524
+throne: 0.7664
+prince: 0.7592
+daughter: 0.7474
+elizabeth: 0.7460
+princess: 0.7425
+kingdom: 0.7337
+monarch: 0.7214
+eldest: 0.7185
+widow: 0.7099
+
+Top guess: queen
+Part 5- Sentiment Analysis (The Application)
+Concept: Sentiment Analysis determines whether a piece of text is Positive, Negative, or Neutral. We will use VADER (Valence Aware Dictionary and sEntiment Reasoner) from NLTK. VADER is specifically designed for social media text; it understands that capital letters ("LOVE"), punctuation ("!!!"), and emojis change the sentiment intensity.
+
+Task:
+
+Initialize the SentimentIntensityAnalyzer.
+
+Pass the Pizza Review (corpus[1]) into the analyzer.
+
+Pass the Math Complaint (corpus[5]) into the analyzer.
+
+Analysis: Look at the compound score for both.
+
+Compound Score Range: -1 (Most Negative) to +1 (Most Positive).
+
+Does the model correctly identify that "delicious" and "terrible" in the same sentence result in a mixed or neutral score?
+
+
+[ ]
+#import nltk
+#from nltk.sentiment import SentimentIntensityAnalyzer
+# Download VADER (run once)
+nltk.download('vader_lexicon')
+# rest of the code here
+
+# If needed (first time only):
+# import nltk
+# nltk.download('vader_lexicon')
+
+from nltk.sentiment import SentimentIntensityAnalyzer
+
+corpus = [
+    "Artificial Intelligence is transforming the world; however, ethical concerns remain!",
+    "The pizza was absolutely delicious, but the service was terrible ... I won't go back.",
+    "The quick brown fox jumps over the lazy dog.",
+    "To be, or not to be, that is the question: Whether 'tis nobler in the mind.",
+    "Data science involves statistics, linear algebra, and machine learning.",
+    "I love machine learning, but I hate the math behind it."
+]
+
+# 1) Initialize analyzer
+sia = SentimentIntensityAnalyzer()
+
+# 2) Inputs
+pizza_review = corpus[1]
+math_complaint = corpus[5]
+
+# 3) Get polarity scores
+pizza_scores = sia.polarity_scores(pizza_review)
+math_scores = sia.polarity_scores(math_complaint)
+
+# 4) Print detailed results and compound scores
+print("Pizza Review:", pizza_review)
+print("Pizza Scores:", pizza_scores)
+print("Pizza Compound:", pizza_scores['compound'])
+
+print("\nMath Complaint:", math_complaint)
+print("Math Scores:", math_scores)
+print("Math Compound:", math_scores['compound'])
+
+Pizza Review: The pizza was absolutely delicious, but the service was terrible ... I won't go back.
+Pizza Scores: {'neg': 0.223, 'neu': 0.644, 'pos': 0.134, 'compound': -0.3926}
+Pizza Compound: -0.3926
+
+Math Complaint: I love machine learning, but I hate the math behind it.
+Math Scores: {'neg': 0.345, 'neu': 0.478, 'pos': 0.177, 'compound': -0.5346}
+Math Compound: -0.5346
+[nltk_data] Downloading package vader_lexicon to /root/nltk_data...
+Task
+Define a simple stemming helper function simple_stem(word) to remove 'ing', 'ly', 'ed', and 's' suffixes. Implement clean_text_scratch(text) to perform lowercasing, punctuation removal using re, tokenize by whitespace, remove specified stopwords ['the', 'is', 'in', 'to', 'of', 'and', 'a', 'it', 'was', 'but', 'or'], and apply the simple_stem helper to each token. Apply clean_text_scratch to the first sentence of the corpus and print the resulting cleaned text.
+
+Define Simple Stemming Helper
+Subtask:
+Create a helper function, simple_stem(word), that removes 'ing', 'ly', 'ed', and 's' suffixes from a word.
+
+Reasoning: I need to define the simple_stem function according to the instructions, which involves checking for specific suffixes ('ing', 'ly', 'ed', 's') and removing them in a specific order.
+
+
+[ ]
+import re
+#write rest of the code here
+
+def simple_stem(word):
+    if word.endswith('ing'):
+        return word[:-3]
+    elif word.endswith('ly'):
+        return word[:-2]
+    elif word.endswith('ed'):
+        return word[:-2]
+    elif word.endswith('s'):
+        return word[:-1]
+    return word
+
+[ ]
+
+import re
+
+# Given corpus
+corpus = [
+    "Artificial Intelligence is transforming the world; however, ethical concerns remain!",
+    "The pizza was absolutely delicious, but the service was terrible ... I won't go back.",
+    "The quick brown fox jumps over the lazy dog.",
+    "To be, or not to be, that is the question: Whether 'tis nobler in the mind.",
+    "Data science involves statistics, linear algebra, and machine learning.",
+    "I love machine learning, but I hate the math behind it."
+]
+
+# Stopwords per instructions
+STOPWORDS = {'the', 'is', 'in', 'to', 'of', 'and', 'a', 'it', 'was', 'but', 'or'}
+
+# --- Simple Stemming Helper ---
+def simple_stem(word: str) -> str:
+    """
+    Naively remove one of the suffixes 'ing', 'ly', 'ed', or 's' (in this order)
+    if the word ends with it and the remaining stem is non-empty.
+    """
+    for suf in ('ing', 'ly', 'ed', 's'):
+        if word.endswith(suf) and len(word) > len(suf):
+            return word[:-len(suf)]
+    return word
+
+# --- Cleaning Function ---
+def clean_text_scratch(text: str):
+    """
+    1) Lowercase
+    2) Remove punctuation/special characters using regex (keep a-z, 0-9, whitespace)
+    3) Tokenize by whitespace
+    4) Remove specified stopwords
+    5) Apply naive simple_stem to each token
+    """
+    # 1) Lowercase
+    text = text.lower()
+    # 2) Remove punctuation/special chars
+    text = re.sub(r"[^a-z0-9\s]", " ", text)
+    text = re.sub(r"\s+", " ", text).strip()
+    # 3) Tokenize
+    tokens = text.split()
+    # 4) Stopword removal
+    tokens = [t for t in tokens if t not in STOPWORDS]
+    # 5) Simple stemming
+    tokens = [simple_stem(t) for t in tokens]
+    return tokens
+
+# --- Apply to the first sentence and print ---
+first_cleaned = clean_text_scratch(corpus[0])
+print(first_cleaned)
+
+['artificial', 'intelligence', 'transform', 'world', 'however', 'ethical', 'concern', 'remain']
+Define clean_text_scratch Function
+Subtask:
+Write the clean_text_scratch(text) function. This function will perform lowercasing, punctuation removal using re, tokenization by splitting on whitespace, stopword removal using the provided list ['the', 'is', 'in', 'to', 'of', 'and', 'a', 'it', 'was', 'but', 'or'], and apply the simple_stem helper function to each word.
+
+Reasoning: I need to define the clean_text_scratch function that performs lowercasing, punctuation removal, tokenization, stopword removal, and applies the simple_stem function as per the instructions.
+
+
+[ ]
+def clean_text_scratch(text):
+    # 1. Lowercasing
+    text = text.lower()
+
+    # 2. Punctuation Removal
+    text = re.sub(r'[!.,:;...?\\]', '', text)
+
+    # 3. Tokenization
+    words = text.split()
+
+    # 4. Stopword Removal
+    stopwords = ['the', 'is', 'in', 'to', 'of', 'and', 'a', 'it', 'was', 'but', 'or']
+    filtered_words = [word for word in words if word not in stopwords]
+
+    # 5. Simple Stemming
+    stemmed_words = [simple_stem(word) for word in filtered_words]
+
+    return stemmed_words
+Reasoning: The clean_text_scratch function has been defined, so the next logical step is to apply it to the first sentence of the corpus and print the result as requested by the task.
+
+
+[ ]
+cleaned_first_sentence = clean_text_scratch(corpus[0])
+print(cleaned_first_sentence)
+['artificial', 'intelligence', 'transform', 'world', 'however', 'ethical', 'concern', 'remain']
+Final Task
+Subtask:
+Review the output of the clean_text_scratch function for the first sentence of the corpus.
+
+Summary:
+Q&A
+The output of the clean_text_scratch function for the first sentence of the corpus is ['artificial', 'intelligence', 'transform', 'world', 'however', 'ethical', 'concern', 'remain'].
+
+Data Analysis Key Findings
+A helper function simple_stem was successfully created to remove 'ing', 'ly', 'ed', and 's' suffixes, returning the original word if no specified suffix was found.
+The clean_text_scratch function was implemented to perform several text preprocessing steps: lowercasing, punctuation removal, tokenization by whitespace, removal of specified stopwords (e.g., 'the', 'is', 'in'), and application of the simple_stem helper to each token.
+Applying clean_text_scratch to the first sentence of the corpus resulted in the cleaned and stemmed token list: ['artificial', 'intelligence', 'transform', 'world', 'however', 'ethical', 'concern', 'remain'].
+Insights or Next Steps
+The established clean_text_scratch function provides a foundational text preprocessing pipeline that can be directly applied to larger text datasets for various natural language processing tasks.
+For more sophisticated text analysis, consider expanding the stemming logic to include a broader set of suffixes or integrating a more robust stemming or lemmatization library (e.g., NLTK's Porter Stemmer or WordNet Lemmatizer) for enhanced linguistic accuracy.
+Task
+Clean the entire corpus using the clean_text_nltk function to create a cleaned_corpus. From this cleaned_corpus, extract all unique words, sort them alphabetically, and store them in a list called vocabulary. Define a function get_bow_vector(sentence, vocabulary) that cleans the input sentence using clean_text_nltk and then generates a Bag of Words vector by counting the occurrences of each word from the vocabulary in the cleaned sentence. Finally, print the vocabulary and the Bag of Words vector for the sentence "The quick brown fox jumps over the lazy dog."
+
+Clean Corpus for Vocabulary
+Subtask:
+Apply the clean_text_nltk function (defined in Part 1.2) to each sentence in the corpus to create a cleaned and lemmatized version of the entire corpus.
+
+Reasoning: I need to apply the clean_text_nltk function to each sentence in the corpus and store the results in a new list named cleaned_corpus, as per the instructions.
+
+
+[ ]
+cleaned_corpus = []
+for sentence in corpus:
+    cleaned_corpus.append(clean_text_nltk(sentence))
+
+print(cleaned_corpus)
+[['artificial', 'intelligence', 'transforming', 'world', 'however', 'ethical', 'concern', 'remain'], ['pizza', 'absolutely', 'delicious', 'service', 'terrible', 'wo', 'go', 'back'], ['quick', 'brown', 'fox', 'jump', 'lazy', 'dog'], ['question', 'whether', 'nobler', 'mind'], ['data', 'science', 'involves', 'statistic', 'linear', 'algebra', 'machine', 'learning'], ['love', 'machine', 'learning', 'hate', 'math', 'behind']]
+Reasoning: Now that the corpus is cleaned, I need to extract all unique words from cleaned_corpus, sort them alphabetically, and store them in a list called vocabulary as per the task.
+
+Task
+Instantiate CountVectorizer from sklearn.feature_extraction.text, fit and transform the raw corpus using this vectorizer, and then print the resulting Bag of Words matrix as a dense array, along with the feature names (vocabulary).
+
+Instantiate CountVectorizer
+Subtask:
+Import and instantiate CountVectorizer from sklearn.feature_extraction.text.
+
+Reasoning: The subtask requires instantiating CountVectorizer. I will write a code block to import CountVectorizer and create an instance named vectorizer.
+
